@@ -39,7 +39,7 @@ To run the tests of an arbitrary exercise using the Docker image, do the followi
 
 Once the test runner has finished, its results will be written to `<output-dir>/results.json`.
 
-If you are using Docker on an M1 mac, you'll need to build a docker image using `DockerfileMac` instead of the default: `docker build -t exercism/test-runner -f DockerfileMac .` The M1 Mac build of the UCM is `ucm-arm64` is too large for standard git storage, use git lfs for the file.
+If you are using Docker on an M1 mac, you'll need to build a docker image using `DockerfileMac`: `docker build -t exercism/test-runner -f DockerfileMac .` The M1 Mac build of the UCM is `ucm-arm64` and it is too large for standard git storage, use git lfs for the file.
 
 ## Run the tests
 
