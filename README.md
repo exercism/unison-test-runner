@@ -73,10 +73,11 @@ When you've made modifications to the code that will result in a new "golden" st
 
 The Unison test runner relies on a few conventions and contracts between the Unison Exercism repo proper and the files found here.
 
-1.) Every solution's `name.test.u` file should expose a variable `tests` of type `[base.Test]`
-2.) Every solution directory contains two files under `.meta`, one called `testAnnotation.txt` which is used to capture the values that would otherwise be defined via metaprogramming, like individual test names, and another called `testLoader.md` which scripts the addition of the users solution and test file to a codebase.
-3.) The `src` directory in the test runner repo contains the files responsible for writing the Json output file. They rely on environment variables set by the `export` statements in the `run.sh` script.
-4.) Currently this test runner is targeting v2 of the api spec.
+1. Every solution's `name.test.u` file should expose a variable `tests` of type `[base.Test]`
+2. Every solution directory contains two files under `.meta`, one called `testAnnotation.txt`, and another called `testLoader.md`.
+3. `testAnnotation.txt` is used to capture the values that would otherwise be defined via metaprogramming or codebase introspection, in this case, individual test names. It must be comma delimited.
+3. The `src` directory in the test runner repo contains the files responsible for writing the Json output file. They rely on environment variables set by the `export` statements in the `run.sh` script.
+4. Currently this test runner is targeting v2 of the api spec.
 
 ## General workflow
 

@@ -1,4 +1,3 @@
 tests/*/results.json
 .unisonHistory
 *.env
-ucm-arm64
