@@ -15,9 +15,9 @@ This repository is a [template repository](https://help.github.com/en/github/cre
 
 Once you're happy with your test runner, [open an issue on the exercism/exercism](https://github.com/exercism/exercism/issues/new?assignees=&labels=&template=new-test-runner.md&title=%5BNew+Test+Runner%5D+) to request an official test runner repository for your track.
 
-# Exercism TRACK_NAME_HERE Test Runner
+# Exercism Unison Test Runner
 
-The Docker image to automatically run tests on TRACK_NAME_HERE solutions submitted to [Exercism].
+The Docker image to automatically run tests on Unison solutions submitted to [Exercism].
 
 ## Run the test runner
 
@@ -38,6 +38,8 @@ To run the tests of an arbitrary exercise using the Docker image, do the followi
 2. Run `./bin/run-in-docker.sh <exercise-slug> <solution-dir> <output-dir>`
 
 Once the test runner has finished, its results will be written to `<output-dir>/results.json`.
+
+If you are using Docker on an M1 mac, you'll need to build a docker image using `DockerfileMac` instead of the default: `docker build -t exercism/test-runner -f DockerfileMac .` The M1 Mac build of the UCM is `ucm-arm64` is too large for standard git storage, use git lfs for the file.
 
 ## Run the tests
 
@@ -66,3 +68,23 @@ When you've made modifications to the code that will result in a new "golden" st
 [test-runners]: https://github.com/exercism/docs/tree/main/building/tooling/test-runners
 [golden]: https://ro-che.info/articles/2017-12-04-golden-tests
 [exercism]: https://exercism.io
+
+# How the Unison test runner works
+
+The Unison test runner relies on a few conventions and contracts between the Unison Exercism repo proper and the files found here.
+
+1.) Every solution's `name.test.u` file should expose a variable `tests` of type `[base.Test]`
+2.) Every solution directory contains two files under `.meta`, one called `testAnnotation.txt` which is used to capture the values that would otherwise be defined via metaprogramming, like individual test names, and another called `testLoader.md` which scripts the addition of the users solution and test file to a codebase.
+3.) The `src` directory in the test runner repo contains the files responsible for writing the Json output file. They rely on environment variables set by the `export` statements in the `run.sh` script.
+4.) Currently this test runner is targeting v2 of the api spec.
+
+## General workflow
+
+* User submits test
+* UCM transcript runner tries to load and add the user's files to a temp codebase with `testLoader.md`
+* If the code typechecks...
+   * The `testRunner.md` transcript runs the `testMain.u` file
+   * The json file containing test results is created
+* If the users code does not typecheck...
+   * The json result file is not created. The UCM runs `errorRunner.md` to read the transcript output file produced by `testLoader.md`. It's called `testLoader.output.md` and it is always located in the same directory as its associated transcript.
+   * The `errorMain.u` code looks for the transcript failure message, and writes the json output file with associated status and message.

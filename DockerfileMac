@@ -1,0 +1,17 @@
+FROM ubuntu:22.04 as download
+
+RUN apt update && apt -y install libnuma-dev
+RUN apt-get update && apt-get -y  install git less jq
+
+COPY ucm-arm64 /usr/local/bin/ucm
+
+RUN chmod +x /usr/local/bin/ucm
+RUN echo "pull https://github.com/unisonweb/share:.unison.base .base" | /usr/local/bin/ucm -C /opt/test-runner/tmp/testRunner
+RUN echo "pull https://github.com/unisonweb/share:.stew.parser .lib.parser" | /usr/local/bin/ucm --codebase /opt/test-runner/tmp/testRunner
+RUN echo "pull https://github.com/unisonweb/share:.stew.json .lib.json" | /usr/local/bin/ucm --codebase /opt/test-runner/tmp/testRunner
+
+WORKDIR /opt/test-runner
+COPY . .
+RUN chmod 755 /opt/test-runner/bin/run.sh
+
+ENTRYPOINT ["/opt/test-runner/bin/run.sh"]

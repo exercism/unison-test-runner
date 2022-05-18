@@ -1,0 +1,106 @@
+use Text ++
+
+{{
+{type testRunner.Version} represents the version of the API spec that the JSON output file adheres to
+
+{One} For tracks which test runner cannot provide information on individual tests.
+
+{Two} For tracks which test runner can output individual test information. Minimal required version for tracks with Concept Exercises.
+
+{Three}For tracks which test runner can link individual tests to a task. Typically used for concept exercises
+}}
+unique type testRunner.Version = One | Two | Three
+
+testRunner.Version.toJson = cases
+  One -> Json.JNumber (1.0)
+  Two -> Json.JNumber (2.0)
+  Three -> Json.JNumber (3.0)
+
+{{
+  {type testRunner.Status} can represent the overall status of the test suite results and/or the individual status of a test result.
+
+  If any individual tests fail, the overall result must be {Fail}.
+
+  Note that {Error} won't be reachable as it's only generated for non-compiling code. }}
+unique type testRunner.Status = Pass | Fail | Error
+
+testRunner.Status.toJson = cases
+  Pass -> json.Json.JString "pass"
+  Fail -> json.Json.JString "fail"
+  Error -> json.Json.JString "error"
+
+{{
+  {type testRunner.Message} represents the message that a user should receive about their test results individually or overall, if individual test results are not available.
+}}
+unique type testRunner.Message = Message Text
+
+testRunner.Message.toJson = cases
+  Message t -> Json.JString t
+
+{{A human readable test name}}
+unique type testRunner.Name = Name Text
+testRunner.Name.toJson = cases
+  Name n -> Json.JString n
+
+{{
+  The code which comprises the actual test that the user sees.
+
+  We can omit this until we have better language introspection capabilities.
+}}
+unique type testRunner.TestCode = TestCode Text
+
+testRunner.TestCode.toJson = cases
+  TestCode code -> Json.JString code
+
+{{
+  {type Output} is used to store and output anything that a user deliberately outputs for a test, for example, debugging information.
+
+  Must be less than 500 characters.
+}}
+unique type testRunner.Output = Output Text
+
+testRunner.Output.toJson = cases
+  Output output -> Text.take 500 output |> JString
+
+{{
+  {type TaskID} links a test to a specific task (sub-part of a concept exercise) via the task's ID numeric heading
+
+  Only used for V3 spec, concept exercises
+}}
+unique type testRunner.TaskID = TaskID Nat
+
+testRunner.TaskID.toJson = cases
+  TaskID n -> Json.JNumber (Nat.toFloat n)
+
+{{
+  Represents a single test
+
+  Tests should be present for V2 and V3 of the spec.
+}}
+unique type testRunner.Test = Test testRunner.Name (Optional testRunner.TestCode)  testRunner.Status (Optional testRunner.Message) (Optional testRunner.Output) (Optional testRunner.TaskID)
+
+testRunner.Test.toJson = cases
+  Test name maybeTestCode status maybeMsg maybeOutput maybeTaskId ->
+      nameStr = ("name", Name.toJson name)
+      testCode = Optional.map (c -> ("test_code",TestCode.toJson c) )  maybeTestCode
+      statusStr = ("status", Status.toJson status)
+      msgSt = Optional.map (m -> ("message", Message.toJson m) )  maybeMsg
+      taskIdStr = Optional.map (t -> ("task_id", TaskID.toJson t)) maybeTaskId
+      jsonFields = [(Some nameStr), testCode, (Some statusStr), msgSt, taskIdStr] |> List.somes
+      JObject jsonFields
+
+{{Models overall test file structure}}
+unique type testRunner.TestFile =
+  TestFile testRunner.Version testRunner.Status (Optional testRunner.Message) (Optional [testRunner.Test])
+
+testRunner.TestFile.toJson = cases
+  TestFile version status maybeMessage maybeTests ->
+  versStr = ( "version", Version.toJson version)
+  statStr = ("status", Status.toJson status)
+  msgStr = Optional.map (m -> ("message", Message.toJson m)) maybeMessage
+  testsStr =
+    Optional.map (tests -> List.map Test.toJson tests) maybeTests |>
+    Optional.map (array -> ("tests", JArray array) )
+  jsonFields = [(Some versStr), (Some statStr), msgStr, testsStr] |> List.somes
+  JObject jsonFields
+
