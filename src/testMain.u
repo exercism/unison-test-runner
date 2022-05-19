@@ -16,7 +16,7 @@ testRunner.main _ =
   annotations = !(parseAnnotationFile testAnnotationFilePath)
   testRunner.checkAnnotationFile annotations tests
   json = toV2TestFile tests annotations |> toJson
-  jsonString = json |> compact
+  jsonString = json |> compactSpecial
   envFilePath = io.getEnv "results_file"
   filePath = FilePath ( envFilePath )
   writeFile filePath jsonString

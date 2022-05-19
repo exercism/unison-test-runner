@@ -169,3 +169,46 @@ testRunner.TestAnnotation.fromJsonRead = 'let
 parser.Error.toFailure : parser.Error Unit JsonToken -> Failure
 parser.Error.toFailure error =
   Failure (typeLink parser.Error) "A json parsing error occured" (Any error)
+
+
+{{We need these as addendum because the current JSON library doesn't escape a few control characters.
+
+It can be removed when the JSON library on Share has been update.d
+}}
+json.render.stringSpecial : Text -> Text
+json.render.stringSpecial =
+  use Text ++
+  escapeChar : Char -> [Char]
+  escapeChar = cases
+    ?\" -> [?\\, ?\"]
+    ?\\ -> [?\\, ?\\]
+    ?\n -> [?\\, ?n]
+    ?\t -> [?\\, ?t]
+    ?\r -> [?\\, ?r]
+    ?\f -> [?\\, ?f]
+    ?& -> [?\\, ?&]
+    c   ->
+      if isISOControl c then
+        bug
+          ("JSON rendering of control characters is not yet supported for character with decimal value "
+            ++ Nat.toText (Char.toNat c))
+      else [c]
+  surroundQuotes : Text -> Text
+  surroundQuotes t = "\"" ++ t ++ "\""
+  escape = fromCharList << List.flatMap escapeChar << toCharList
+  surroundQuotes << escape
+
+json.render.compactSpecial : Json -> Text
+json.render.compactSpecial = cases
+  JNull       -> "null"
+  JBoolean b  -> if b then "true" else "false"
+  JNumber f   -> number f
+  JString t   -> render.stringSpecial t
+  JArray js   ->
+    use Text ++
+    inner = Text.join "," (List.map json.render.compactSpecial js)
+    "[" ++ inner ++ "]"
+  JObject kvs ->
+    use Text ++
+    entry = cases (k, v) -> render.stringSpecial k ++ ":" ++ json.render.compactSpecial v
+    "{" ++ Text.join "," (List.map entry kvs) ++ "}"
