@@ -173,7 +173,7 @@ parser.Error.toFailure error =
 
 {{We need these as addendum because the current JSON library doesn't escape a few control characters.
 
-It can be removed when the JSON library on Share has been update.d
+It can be removed when the JSON library on Share has been updated
 }}
 json.render.stringSpecial : Text -> Text
 json.render.stringSpecial =
@@ -186,7 +186,7 @@ json.render.stringSpecial =
     ?\t -> [?\\, ?t]
     ?\r -> [?\\, ?r]
     ?\f -> [?\\, ?f]
-    ?& -> [?\\, ?&]
+    ?\b -> [?\\, ?b]
     c   ->
       if isISOControl c then
         bug
