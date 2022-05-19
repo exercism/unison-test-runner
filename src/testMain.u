@@ -12,26 +12,27 @@ use testRunner TestFile Test
 testRunner.main : '{IO,Exception}()
 testRunner.main _ =
   solutionPrefix = io.getEnv "solution_dir"
-  testAnnotationFilePath = FilePath (solutionPrefix Text.++ "/.meta/testAnnotation.txt")
-  testNames = !(parseAnnotationFileSimple testAnnotationFilePath)
-  testRunner.checkAnnotationFile testNames tests
-  json = toV2TestFile tests testNames |> toJson
+  testAnnotationFilePath = FilePath (solutionPrefix Text.++ "/.meta/testAnnotation.json")
+  annotations = !(parseAnnotationFile testAnnotationFilePath)
+  testRunner.checkAnnotationFile annotations tests
+  json = toV2TestFile tests annotations |> toJson
   jsonString = json |> compact
   envFilePath = io.getEnv "results_file"
   filePath = FilePath ( envFilePath )
   writeFile filePath jsonString
 
-testRunner.Result.toTest: Result -> Text -> Test
-testRunner.Result.toTest result name =
+testRunner.Result.toTest: Result -> TestAnnotation -> Test
+testRunner.Result.toTest result annotation =
   use testRunner.Test Test
+  (TestAnnotation name code taskId) = annotation
   match result with
     Test.Result.Fail msg ->
       failureMsg = if msg === "" then "Expected value was not equal to result" else msg
-      Test (Name name) None testRunner.Status.Fail (Some (Message failureMsg)) None None
+      Test name (Some code) testRunner.Status.Fail (Some (Message failureMsg)) None taskId
     Test.Result.Ok msg ->
-      Test (Name name) None testRunner.Status.Pass (Some (Message msg)) None None
+      Test name (Some code) testRunner.Status.Pass (Some (Message msg)) None taskId
 
-testRunner.toV2TestFile : [Result] -> [Text] -> TestFile
+testRunner.toV2TestFile : [Result] -> [TestAnnotation] -> TestFile
 testRunner.toV2TestFile results names =
   use testRunner.TestFile
   tests = List.zipWith Result.toTest results names
@@ -40,7 +41,7 @@ testRunner.toV2TestFile results names =
   status = if containsFail then Status.Fail else Status.Pass
   TestFile Version.Two status None (Some tests)
 
-testRunner.checkAnnotationFile : [Text] -> [Result] -> {Exception}()
+testRunner.checkAnnotationFile : [a] -> [Result] -> {Exception}()
 testRunner.checkAnnotationFile annotationlist tests =
   use Text ++
   annotationSize = List.size annotationlist
@@ -48,11 +49,12 @@ testRunner.checkAnnotationFile annotationlist tests =
   failureMsg = "test file contained " ++ (Nat.toText testsSize) ++ " items but annotations file contained " ++ (Nat.toText annotationSize) ++ " items"
   if (annotationSize Nat.!= testsSize) then raise (failure failureMsg (annotationlist, tests)) else ()
 
-testRunner.parseAnnotationFileSimple : FilePath -> '{IO,Exception} [Text]
-testRunner.parseAnnotationFileSimple testFilePath _ =
-  {{Assumes comma separated newline list of human readable names in exact order of the list }}
-  fileText = testRunner.readFile testFilePath
-  Text.split ?, fileText |> List.map Text.trim
+{{Assumes a json file containing {type TestAnnotation} in a list. The order must match the order of the tests value }}
+testRunner.parseAnnotationFile : FilePath -> '{IO,Exception} [TestAnnotation]
+testRunner.parseAnnotationFile testFilePath _ =
+  json = Json.fromFile testFilePath
+  (TestAnnotationFile annotations) = TestAnnotationFile.fromJson json
+  annotations
 
 testRunner.writeFile : FilePath -> Text ->{IO, Exception} ()
 testRunner.writeFile path content =

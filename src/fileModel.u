@@ -82,9 +82,9 @@ unique type testRunner.Test = Test testRunner.Name (Optional testRunner.TestCode
 testRunner.Test.toJson = cases
   Test name maybeTestCode status maybeMsg maybeOutput maybeTaskId ->
       nameStr = ("name", Name.toJson name)
-      testCode = Optional.map (c -> ("test_code",TestCode.toJson c) )  maybeTestCode
+      testCode = Optional.map (c -> ("test_code",TestCode.toJson c)) maybeTestCode
       statusStr = ("status", Status.toJson status)
-      msgSt = Optional.map (m -> ("message", Message.toJson m) )  maybeMsg
+      msgSt = Optional.map (m -> ("message", Message.toJson m)) maybeMsg
       taskIdStr = Optional.map (t -> ("task_id", TaskID.toJson t)) maybeTaskId
       jsonFields = [(Some nameStr), testCode, (Some statusStr), msgSt, taskIdStr] |> List.somes
       JObject jsonFields
@@ -104,3 +104,68 @@ testRunner.TestFile.toJson = cases
   jsonFields = [(Some versStr), (Some statStr), msgStr, testsStr] |> List.somes
   JObject jsonFields
 
+{{Models json annotation file which we use for test source code and human readable names}}
+unique type testRunner.TestAnnotationFile = TestAnnotationFile [testRunner.TestAnnotation]
+
+testRunner.TestAnnotationFile.fromJson : Json -> {Exception} TestAnnotationFile
+testRunner.TestAnnotationFile.fromJson json =
+  array = Json.asArray json |> Optional.getOrElse []
+  objects : [Optional [(Text,Json)]]
+  objects = List.map Json.asObject array
+  annotations = List.map (maybeObj ->
+      Optional.flatMap tryGetTestAnnotation maybeObj) objects |> List.somes
+  TestAnnotationFile annotations
+
+{{We require that the fields for name and test_code are included for each test}}
+testRunner.tryGetTestAnnotation : [(Text,Json)] -> Optional TestAnnotation
+testRunner.tryGetTestAnnotation fields =
+  getTextField : Text -> [(Text,Json)] -> Optional Text
+  getTextField key fields =
+    keyValue = List.find (cases (k, v) -> k === key ) fields
+    Optional.flatMap (cases (k,v) -> Json.asText v) keyValue
+  getNatField : Text -> [(Text,Json)] -> Optional Nat
+  getNatField key fields =
+    keyValue = List.find (cases (k, v) -> k === key ) fields
+    Optional.flatMap (cases (k,v) -> Json.asNat v) keyValue
+
+  name = '(toAbort (getTextField "name" fields))
+  testCode = '(toAbort (getTextField "test_code" fields))
+  taskNat = getNatField "task_id" fields
+  maybeTaskId = Optional.map (t -> TaskID t) taskNat
+  Abort.toOptional! '(TestAnnotation (Name !name) (TestCode !testCode) maybeTaskId)
+
+testRunner.TestAnnotationFile.fromJsonString : Text -> {Exception} TestAnnotationFile
+testRunner.TestAnnotationFile.fromJsonString rawJson =
+  decodeText TestAnnotationFile.fromJsonRead rawJson
+
+testRunner.TestAnnotationFile.fromJsonRead : '{JsonRead, Throw JsonRead.Error} TestAnnotationFile
+testRunner.TestAnnotationFile.fromJsonRead = 'let
+  annotations : {Throw JsonRead.Error}[TestAnnotation]
+  annotations = JsonRead.list TestAnnotation.fromJsonRead
+  TestAnnotationFile annotations
+
+{{Models the json object annotation}}
+unique type testRunner.TestAnnotation = TestAnnotation testRunner.Name testRunner.TestCode (Optional testRunner.TaskID)
+
+testRunner.TestAnnotation.toJson = cases
+  TestAnnotation name code taskId ->
+    nameStr = ("name", Name.toJson name)
+    codeStr = ("test_code", TestCode.toJson code)
+    taskIdStr = Optional.map (id -> ("task_id", TaskID.toJson id)) taskId
+    annotationsFields = [(Some nameStr), (Some codeStr), taskIdStr] |> List.somes
+    JObject annotationsFields
+
+testRunner.TestAnnotation.fromJsonRead : '{JsonRead, Throw JsonRead.Error} TestAnnotation
+testRunner.TestAnnotation.fromJsonRead = 'let
+  testCode = readChildField "test_code" expectText
+  name = readChildField "name" expectText
+  optTaskId = let
+    maybeTaskNat = '(readChildField "task_id" expectNat)
+    Throw.toEither maybeTaskNat |> Either.toOptional
+  taskId = Optional.map TaskID optTaskId
+
+  TestAnnotation (Name name) (TestCode testCode) taskId
+
+parser.Error.toFailure : parser.Error Unit JsonToken -> Failure
+parser.Error.toFailure error =
+  Failure (typeLink parser.Error) "A json parsing error occured" (Any error)
