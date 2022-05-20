@@ -11,7 +11,7 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 COPY --from=download /usr/local/bin/ucm /usr/local/bin/ucm
-RUN echo "pull https://github.com/unisonweb/share:.stew.parser .lib.parser" | /usr/local/bin/ucmtmp -C /opt/test-runner/tmp/testRunner
+RUN echo "pull https://github.com/unisonweb/share:.stew.parser .lib.parser" | /usr/local/bin/ucm -C /opt/test-runner/tmp/testRunner
 RUN echo "pull https://github.com/unisonweb/share:.stew.json .lib.json" | /usr/local/bin/ucm -c /opt/test-runner/tmp/testRunner
 
 WORKDIR /opt/test-runner
