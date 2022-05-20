@@ -29,9 +29,3 @@ docker run \
     --workdir /opt/test-runner \
     --entrypoint /opt/test-runner/bin/run-tests.sh \
     exercism/test-runner
-
-# docker run \
-#     --rm --network none \
-#     --mount type=bind,src="/Users/rebeccamark/Unison/exercism/unison/exercises/practice/leap",dst=/solution
-#     --mount type=bind,src="/Users/rebeccamark/Unison/exercism/exercisesSpike",dst=/output
-#     --mount type=tmpfs,dst=/tmp exercism/test-runner "leap" /solution /output
