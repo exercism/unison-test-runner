@@ -34,11 +34,15 @@ mkdir -p "${output_dir}"
 echo "${slug}: testing..."
 
 # Run the tests for the provided implementation file and redirect stdout and
-# stderr to capture it
+# stderr to capture it.
+# The solution directory needs to be copied to /tmp and the UCM command needs to be run in the
+# /tmp directory as it is writeable and allows for relative pathing in the testLoader scripts.
 runTests () {
   codebase=$(mktemp -d)
   cp -r /opt/test-runner/src/ /tmp/
   cp -a /opt/test-runner/tmp/testRunner/.unison "$codebase"/
+  cp -r "$solution_dir"/. /tmp/
+  cd /tmp
   ucm transcript.fork "$solution_dir"/.meta/testLoader.md /tmp/src/testRunner.md --codebase "$codebase"
 }
 test_output=$(runTests 2>&1)
