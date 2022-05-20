@@ -1,8 +1,8 @@
 # Testing transcript for hello exercise
 
 ```ucm
-.> load /solution/src/leap.u
+.> load /opt/test-runner/tests/example-all-fail/src/leap.u
 .> add
-.> load /solution/test/leap.test.u
+.> load /opt/test-runner/tests/example-all-fail/test/leap.test.u
 .> add
 ```

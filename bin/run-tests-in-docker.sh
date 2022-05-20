@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 
 # Synopsis:
-# Test the test runner Docker image by running it against a predefined set of 
+# Test the test runner Docker image by running it against a predefined set of
 # solutions with an expected output.
 # The test runner Docker image is built automatically.
 
@@ -12,8 +12,10 @@
 # Example:
 # ./bin/run-tests-in-docker.sh
 
+# TODO CHANGE WHEN PUSHING FOR NON MAC PEOPLE
+
 # Build the Docker image
-docker build --rm -t exercism/test-runner .
+docker build --rm -t exercism/test-runner -f DockerfileMac .
 
 # Run the Docker image using the settings mimicking the production environment
 docker run \
@@ -26,3 +28,9 @@ docker run \
     --workdir /opt/test-runner \
     --entrypoint /opt/test-runner/bin/run-tests.sh \
     exercism/test-runner
+
+# docker run \
+#     --rm --network none \
+#     --mount type=bind,src="/Users/rebeccamark/Unison/exercism/unison/exercises/practice/leap",dst=/solution
+#     --mount type=bind,src="/Users/rebeccamark/Unison/exercism/exercisesSpike",dst=/output
+#     --mount type=tmpfs,dst=/tmp exercism/test-runner "leap" /solution /output

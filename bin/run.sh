@@ -39,7 +39,7 @@ runTests () {
   codebase=$(mktemp -d)
   cp -r /opt/test-runner/src/ /tmp/
   cp -a /opt/test-runner/tmp/testRunner/.unison "$codebase"/
-  ucm transcript.fork /solution/.meta/testLoader.md /tmp/src/testRunner.md --codebase "$codebase"
+  ucm transcript.fork "$solution_dir"/.meta/testLoader.md /tmp/src/testRunner.md --codebase "$codebase"
 }
 test_output=$(runTests 2>&1)
 

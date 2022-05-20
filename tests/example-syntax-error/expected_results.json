@@ -1,5 +1,1 @@
-{
-  "version": 1,
-  "status": "fail",
-  "message": "TODO: replace with correct output"
-}
+{"version":2,"status":"error","message":"\n\n\n  This looks like the start of an expression here \n  \n      1 | \"quoted invalid top-level value\"\n  \n  but at the file top-level, I expect one of the following:\n  \n    - A binding, like \"quoted invalid top-level value\" = 42 OR\n                      \"quoted invalid top-level value\" : Nat\n                      \"quoted invalid top-level value\" = 42\n    - A watch expression, like > \"quoted invalid top-level value\" + 1\n    - An `ability` declaration, like ability Foo where ...\n    - A `type` declaration, like structural type Optional a = None | Some a\n    - A `namespace` declaration, like namespace Seq where ...\n  \n\n"}
