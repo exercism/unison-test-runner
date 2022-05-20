@@ -29,10 +29,11 @@ output_dir=$(realpath "${3%/}")
 # Create the output directory if it doesn't exist
 mkdir -p "${output_dir}"
 
-# TODO CHANGE WHEN PUSHING FOR NON MAC PEOPLE
-
 # Build the Docker image
-docker build --rm -t exercism/test-runner -f DockerfileMac .
+docker build --rm -t exercism/test-runner .
+
+# Mac version
+# docker build --rm -t exercism/test-runner -f DockerfileMac .
 
 # Run the Docker image using the settings mimicking the production environment
 docker run \
