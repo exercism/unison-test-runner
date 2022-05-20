@@ -12,10 +12,11 @@
 # Example:
 # ./bin/run-tests-in-docker.sh
 
-# TODO CHANGE WHEN PUSHING FOR NON MAC PEOPLE
-
 # Build the Docker image
-docker build --rm -t exercism/test-runner -f DockerfileMac .
+docker build --rm -t exercism/test-runner .
+
+# MAC version
+# docker build --rm -t exercism/test-runner -f DockerfileMac .
 
 # Run the Docker image using the settings mimicking the production environment
 docker run \
