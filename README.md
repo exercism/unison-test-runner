@@ -22,7 +22,7 @@ To run the tests of an arbitrary exercise using the Docker image, do the followi
 
 Once the test runner has finished, its results will be written to `<output-dir>/results.json`.
 
-If you are using Docker on an M1 mac, you'll need to build a docker image using `DockerfileMac`: `docker build -t exercism/test-runner -f DockerfileMac .` The M1 Mac build of the UCM is `ucm-arm64` and it is too large for standard git storage, use git lfs for the file.
+If you are using Docker on an M1 mac, you'll need to build a docker image using `DockerfileMac`: `docker build -t exercism/test-runner -f DockerfileMac .` The M1 Mac build of the UCM is `ucm-arm64` and it is too large for standard git storage, contact one of the Unison maintainers for the file.
 
 ## Run the tests
 
@@ -57,13 +57,14 @@ When you've made modifications to the code that will result in a new "golden" st
 The Unison test runner relies on a few conventions and contracts between the Unison Exercism repo proper and the files found here.
 
 1. Every solution's `name.test.u` file should expose a variable `tests` of type `[base.Test]`
-2. Every solution directory contains two files under `.meta`, one called `testAnnotation.txt`, and another called `testLoader.md`.
-3. `testAnnotation.txt` is used to capture the values that would otherwise be defined via metaprogramming or codebase introspection, in this case, individual test names. It must be comma delimited.
+2. Every solution directory contains two files under `.meta`, one called `testAnnotation.json`, and another called `testLoader.md`.
+3. `testAnnotation.json` is used to capture the values that would otherwise be defined via metaprogramming or codebase introspection, in this case, individual test names and the body of the test itself.
 3. The `src` directory in the test runner repo contains the files responsible for writing the Json output file. They rely on environment variables set by the `export` statements in the `run.sh` script.
 4. Currently this test runner is targeting v2 of the api spec.
 
 ## General workflow
 
+* The dockerfile initializes a codebase which contains the standard lib, parser, and json libraries needed to run the tests.
 * User submits test
 * UCM transcript runner tries to load and add the user's files to a temp codebase with `testLoader.md`
 * If the code typechecks...
