@@ -1,0 +1,79 @@
+use Universal
+use base
+use testRunner TestFile Test
+
+{{
+  {testRunner.main} is the entry point function that the transcript should call to write the json output file.
+
+  It relies on the existence of environment variables, ''results_file'' and ''solution_dir'' set in the test runner script.
+
+  the value ''tests'' is dependent upon a loaded value from the solutions folder.
+}}
+testRunner.main : '{IO,Exception}()
+testRunner.main _ =
+  solutionPrefix = io.getEnv "solution_dir"
+  testAnnotationFilePath = FilePath (solutionPrefix Text.++ "/.meta/testAnnotation.json")
+  annotations = !(parseAnnotationFile testAnnotationFilePath)
+  testRunner.checkAnnotationFile annotations tests
+  json = toV2TestFile tests annotations |> toJson
+  jsonString = json |> compactSpecial
+  envFilePath = io.getEnv "results_file"
+  filePath = FilePath ( envFilePath )
+  writeFile filePath jsonString
+
+testRunner.Result.toTest: Result -> TestAnnotation -> Test
+testRunner.Result.toTest result annotation =
+  use testRunner.Test Test
+  (TestAnnotation name code taskId) = annotation
+  match result with
+    Test.Result.Fail msg ->
+      failureMsg = if msg === "" then "Expected value was not equal to result" else msg
+      Test name (Some code) testRunner.Status.Fail (Some (Message failureMsg)) None taskId
+    Test.Result.Ok msg ->
+      Test name (Some code) testRunner.Status.Pass None None taskId
+
+testRunner.toV2TestFile : [Result] -> [TestAnnotation] -> TestFile
+testRunner.toV2TestFile results names =
+  use testRunner.TestFile
+  tests = List.zipWith Result.toTest results names
+  containsFail = List.find (cases (testRunner.Test.Test a b s d e f) ->
+    s === Status.Fail ) tests |> isSome
+  status = if containsFail then Status.Fail else Status.Pass
+  TestFile Version.Two status None (Some tests)
+
+testRunner.checkAnnotationFile : [a] -> [Result] -> {Exception}()
+testRunner.checkAnnotationFile annotationlist tests =
+  use Text ++
+  annotationSize = List.size annotationlist
+  testsSize = List.size tests
+  failureMsg = "test file contained " ++ (Nat.toText testsSize) ++ " items but annotations file contained " ++ (Nat.toText annotationSize) ++ " items"
+  if (annotationSize Nat.!= testsSize) then raise (failure failureMsg (annotationlist, tests)) else ()
+
+{{Assumes a json file containing {type TestAnnotation} in a list. The order must match the order of the tests value }}
+testRunner.parseAnnotationFile : FilePath -> '{IO,Exception} [TestAnnotation]
+testRunner.parseAnnotationFile testFilePath _ =
+  json = Json.fromFile testFilePath
+  (TestAnnotationFile annotations) = TestAnnotationFile.fromJson json
+  annotations
+
+testRunner.writeFile : FilePath -> Text ->{IO, Exception} ()
+testRunner.writeFile path content =
+  fileHandle : '{IO, Exception} Handle
+  fileHandle _ = openFile path Write
+  bracket fileHandle closeFile (h -> putBytes h (toUtf8 content))
+
+testRunner.readFile : FilePath ->{IO, Exception} Text
+testRunner.readFile path =
+  if not (base.io.fileExists path) then raise (failure "file not found" path) else
+    read : Handle ->{IO, Exception} Bytes
+    read fileHandle =
+      go acc =
+        use Bytes ++
+        use Nat <
+        bs = getBytes fileHandle 4096
+        if Bytes.size bs < 4096 then acc ++ bs else go (acc ++ bs)
+      go Bytes.empty
+    fileHandle : '{IO, Exception} Handle
+    fileHandle _ = openFile path Read
+    bracket fileHandle closeFile (file -> read file |> fromUtf8)
+

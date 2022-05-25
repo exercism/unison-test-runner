@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 
 # Synopsis:
-# Test the test runner Docker image by running it against a predefined set of 
+# Test the test runner Docker image by running it against a predefined set of
 # solutions with an expected output.
 # The test runner Docker image is built automatically.
 
@@ -14,6 +14,9 @@
 
 # Build the Docker image
 docker build --rm -t exercism/test-runner .
+
+# MAC version
+# docker build --rm -t exercism/test-runner -f DockerfileMac .
 
 # Run the Docker image using the settings mimicking the production environment
 docker run \

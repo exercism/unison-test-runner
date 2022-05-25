@@ -1,4 +1,5 @@
-#!/usr/bin/env sh
+#!/bin/sh
+set -ux
 
 # Synopsis:
 # Run the test runner on a solution.
@@ -21,10 +22,11 @@ if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then
     exit 1
 fi
 
+# Create environment variables for the test runner
 slug="$1"
-solution_dir=$(realpath "${2%/}")
-output_dir=$(realpath "${3%/}")
-results_file="${output_dir}/results.json"
+export solution_dir=$(realpath "${2%%/}")
+export output_dir=$(realpath "${3%%/}")
+export results_file="${output_dir}/results.json"
 
 # Create the output directory if it doesn't exist
 mkdir -p "${output_dir}"
@@ -32,15 +34,33 @@ mkdir -p "${output_dir}"
 echo "${slug}: testing..."
 
 # Run the tests for the provided implementation file and redirect stdout and
-# stderr to capture it
-# TODO: Replace 'RUN_TESTS_COMMAND' with the command to run the tests
-test_output=$(RUN_TESTS_COMMAND 2>&1)
+# stderr to capture it.
+# The solution directory needs to be copied to /tmp and the UCM command needs to be run in the
+# /tmp directory as it is writeable and allows for relative pathing in the testLoader scripts.
+runTests () {
+  codebase=$(mktemp -d)
+  cp -r /opt/test-runner/src/ /tmp/
+  cp -a /opt/test-runner/tmp/testRunner/.unison "$codebase"/
+  cp -r "$solution_dir"/. /tmp/
+  cd /tmp
+  ucm transcript.fork "$solution_dir"/.meta/testLoader.md /tmp/src/testRunner.md --codebase "$codebase"
+}
+test_output=$(runTests 2>&1)
 
-# Write the results.json file based on the exit code of the command that was 
-# just executed that tested the implementation file
-if [ $? -eq 0 ]; then
-    jq -n '{version: 1, status: "pass"}' > ${results_file}
-else
+# Check to see if the json output file exists. If it does not,
+# the user's code could not compile and the test run could not take place.
+# Compose error message file with the error runner based on /tmp/src/testRunner.output.md.
+runError () {
+  codebase=$(mktemp -d)
+  cp -a /opt/test-runner/tmp/testRunner/.unison "$codebase"/
+  ucm transcript.fork /tmp/src/errorRunner.md --codebase "$codebase"
+}
+if [ ! -e "${results_file}" ]; then
+  error_output=$(runError 2>&1)
+
+  # Backup error file: If the UCM itself fails to start, capture the output.
+  if [ $? -ne 0 ]; then
+
     # OPTIONAL: Sanitize the output
     # In some cases, the test output might be overly verbose, in which case stripping
     # the unneeded information can be very helpful to the student
@@ -53,7 +73,8 @@ else
     #      | GREP_COLOR='01;31' grep --color=always -E -e '^(ERROR:.*|.*failed)$|$' \
     #      | GREP_COLOR='01;32' grep --color=always -E -e '^.*passed$|$')
 
-    jq -n --arg output "${test_output}" '{version: 1, status: "fail", message: $output}' > ${results_file}
+    jq -n --arg output "${error_output}" '{version: 1, status: "fail", message: $output}' > ${results_file}
+  fi
 fi
 
 echo "${slug}: done"

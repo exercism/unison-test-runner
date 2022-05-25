@@ -1,0 +1,63 @@
+
+{{{errorStatus.main} is the entry point function for the case where the student submits non-compiling code, resulting in the results.json file not being written with failing test data. This script should be run in the event that the results file failed to be created. It parses the transcript error output and creates a json file.}}
+errorStatus.main : '{IO,Exception}()
+errorStatus.main _ =
+  solutionsDir = io.getEnv "solution_dir"
+  transcriptFailure = FilePath (solutionsDir ++ "/.meta/testLoader.output.md" )
+  transcriptOutput = readFile transcriptFailure
+  messageBody = errorStatus.getTranscriptError transcriptOutput
+  json = toTestFile messageBody |> toJson
+  jsonString = json |> compactSpecial
+  envFilePath = io.getEnv "results_file"
+  filePath = FilePath ( envFilePath )
+  writeFile filePath jsonString
+
+writeFile : FilePath -> Text ->{IO, Exception} ()
+writeFile path content =
+  fileHandle : '{IO, Exception} Handle
+  fileHandle _ = openFile path Write
+  bracket fileHandle closeFile (h -> putBytes h (toUtf8 content))
+
+readFile : FilePath ->{IO, Exception} Text
+readFile path =
+  if not (base.io.fileExists path) then raise (failure "file not found" path) else
+    read : Handle ->{IO, Exception} Bytes
+    read fileHandle =
+      go acc =
+        use Bytes ++
+        use Nat <
+        bs = getBytes fileHandle 4096
+        if Bytes.size bs < 4096 then acc ++ bs else go (acc ++ bs)
+      go Bytes.empty
+    fileHandle : '{IO, Exception} Handle
+    fileHandle _ = openFile path Read
+    bracket fileHandle closeFile (file -> read file |> fromUtf8)
+
+{{
+  {toTestFile} transforms the failed transcript message into the {type TestFile} data type.
+
+  Currently the only version of the spec we support is {Version.Two}
+  }}
+errorStatus.toTestFile : Text -> TestFile
+errorStatus.toTestFile message =
+  TestFile (testRunner.Version.Two) (Status.Error) (Some (testRunner.Message.Message message)) None
+
+{{
+  {getTranscriptError} uses the current convention that the transcript will create a failure message as its last step when given non-compiling code. This message can then be used in the {Status.Error} case for the output json testing file.
+
+  Changes in this error message convention are unlikely, and will only happen when new versions of the UCM tool are released.
+
+  In the improbable event that the solution or test uses our transcript failure delimter 🛑 as a string or function name somewhere, the transcript output text as a whole will be used as the failure message.
+}}
+errorStatus.getTranscriptError : Text -> Text
+errorStatus.getTranscriptError fileText =
+  backupErrorMsg = "🧐 Something went wrong. The output produced is below: \n\n" Text.++ fileText
+  splitText = Text.split ?🛑 fileText
+  if List.size splitText === 2 then
+    stanzaError = splitText |> List.last
+    errorChars = Optional.map toCharList stanzaError
+    sanitizeMsg = "\n\nThe transcript failed due to an error in the stanza above. The error is:" |> toCharList
+    Optional.flatMap (List.stripPrefix sanitizeMsg) errorChars |>
+      Optional.map fromCharList |>
+      Optional.getOrElse backupErrorMsg
+  else backupErrorMsg

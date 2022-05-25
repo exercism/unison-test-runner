@@ -1,5 +1,1 @@
-{
-  "version": 1,
-  "status": "fail",
-  "message": "TODO: replace with correct output"
-}
+{"version":2,"status":"error","message":"\n\n\n  I'm not sure what leap means at line 4, columns 84-88\n  \n      4 |   test.label \"leap should be false when year is not divisible by 4\" (test.expect ((leap 2015) === false))\n  \n  Whatever it is, it has a type that conforms to Nat -> Boolean.\n  \n\n"}
