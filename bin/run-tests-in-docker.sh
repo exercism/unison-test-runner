@@ -16,6 +16,7 @@
 docker build --rm -t exercism/test-runner .
 
 # MAC version
+# docker build --rm -t exercism/test-runner -f DockerfileMac .
 # docker buildx build --platform linux/amd64 --rm -t exercism/test-runner -f Dockerfile .
 
 # Run the Docker image using the settings mimicking the production environment

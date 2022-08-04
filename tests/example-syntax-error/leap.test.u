@@ -28,7 +28,7 @@ leap.test.t9 =
   Test.label "leap should be false when year divisible by 200, not divisble by 400" (Test.expect ((leap 1800) === false))
 
 
-test> tests =
+test> leap.tests =
   runAll [
     leap.test.t1,
     leap.test.t2,
