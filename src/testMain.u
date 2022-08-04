@@ -26,10 +26,10 @@ testRunner.Result.toTest result annotation =
   use testRunner.Test Test
   (TestAnnotation name code taskId) = annotation
   match result with
-    Test.Result.Fail msg ->
+    test.Result.Fail msg ->
       failureMsg = if msg === "" then "Expected value was not equal to result" else msg
       Test name (Some code) testRunner.Status.Fail (Some (Message failureMsg)) None taskId
-    Test.Result.Ok msg ->
+    test.Result.Ok msg ->
       Test name (Some code) testRunner.Status.Pass None None taskId
 
 testRunner.toV2TestFile : [Result] -> [TestAnnotation] -> TestFile

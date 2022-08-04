@@ -9,9 +9,8 @@ RUN apt-get update && \
 COPY ucm-arm64 /usr/local/bin/ucm
 
 RUN chmod +x /usr/local/bin/ucm
-RUN echo "pull https://github.com/unisonweb/share:.unison.base .base" | /usr/local/bin/ucm -C /opt/test-runner/tmp/testRunner
-RUN echo "pull https://github.com/unisonweb/share:.stew.parser .lib.parser" | /usr/local/bin/ucm --codebase /opt/test-runner/tmp/testRunner
-RUN echo "pull https://github.com/unisonweb/share:.stew.json .lib.json" | /usr/local/bin/ucm --codebase /opt/test-runner/tmp/testRunner
+RUN echo "pull unison.public.base.latest .base" | /usr/local/bin/ucm -C /opt/test-runner/tmp/testRunner
+RUN echo "pull stew.public.projects.json.releases.v3 lib.json" | /usr/local/bin/ucm --codebase /opt/test-runner/tmp/testRunner
 
 WORKDIR /opt/test-runner
 COPY . .
