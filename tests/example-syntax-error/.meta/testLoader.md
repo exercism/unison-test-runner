@@ -1,8 +1,9 @@
 # Testing transcript for hello exercise
 
 ```ucm
-.> load /opt/test-runner/tests/example-syntax-error/src/leap.u
+.> load /opt/test-runner/tests/example-syntax-error/leap.u
 .> add
-.> load /opt/test-runner/tests/example-syntax-error/test/leap.test.u
+.> load /opt/test-runner/tests/example-syntax-error/leap.test.u
 .> add
+.> move.term leap.tests tests
 ```

@@ -3,3 +3,4 @@ tests/*/results.json
 *.env
 tests/*/.meta/testLoader.output.md
 ucm-arm64
+unison-arm

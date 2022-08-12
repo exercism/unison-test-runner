@@ -157,10 +157,10 @@ testRunner.TestAnnotation.toJson = cases
 
 testRunner.TestAnnotation.fromJsonRead : '{JsonRead, Throw JsonRead.Error} TestAnnotation
 testRunner.TestAnnotation.fromJsonRead = 'let
-  testCode = readChildField "test_code" expectText
-  name = readChildField "name" expectText
+  testCode = expectChildField "test_code" expectText
+  name = expectChildField "name" expectText
   optTaskId = let
-    maybeTaskNat = '(readChildField "task_id" expectNat)
+    maybeTaskNat = '(expectChildField "task_id" expectNat)
     Throw.toEither maybeTaskNat |> Either.toOptional
   taskId = Optional.map TaskID optTaskId
 

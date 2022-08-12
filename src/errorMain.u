@@ -40,7 +40,7 @@ readFile path =
   }}
 errorStatus.toTestFile : Text -> TestFile
 errorStatus.toTestFile message =
-  TestFile (testRunner.Version.Two) (Status.Error) (Some (testRunner.Message.Message message)) None
+  TestFile.TestFile (testRunner.Version.Two) (Status.Error) (Some (testRunner.Message.Message message)) None
 
 {{
   {getTranscriptError} uses the current convention that the transcript will create a failure message as its last step when given non-compiling code. This message can then be used in the {Status.Error} case for the output json testing file.
