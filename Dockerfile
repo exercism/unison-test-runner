@@ -14,7 +14,7 @@ COPY --from=download /usr/local/bin/ucm /usr/local/bin/ucm
 # Setting this environment variable directs the UCM config to a writeable directory
 ENV XDG_DATA_HOME=/tmp
 RUN /usr/local/bin/ucm --no-base -C /opt/test-runner/tmp/testRunner
-RUN echo "pull unison.public.base.releases.M4d .base" | /usr/local/bin/ucm -c /opt/test-runner/tmp/testRunner
+RUN echo "pull unison.public.base.latest .base" | /usr/local/bin/ucm -c /opt/test-runner/tmp/testRunner
 RUN echo "pull stew.public.projects.json.releases.v6 lib.json" | /usr/local/bin/ucm -c /opt/test-runner/tmp/testRunner
 
 WORKDIR /opt/test-runner
