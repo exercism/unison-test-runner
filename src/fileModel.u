@@ -166,11 +166,6 @@ testRunner.TestAnnotation.fromJsonRead = 'let
 
   TestAnnotation (Name name) (TestCode testCode) taskId
 
-parser.Error.toFailure : parser.Error Unit JsonToken -> Failure
-parser.Error.toFailure error =
-  Failure (typeLink parser.Error) "A json parsing error occured" (Any error)
-
-
 {{We need these as addendum because the current JSON library doesn't escape a few control characters.
 
 It can be removed when the JSON library on Share has been updated
@@ -202,7 +197,7 @@ json.render.compactSpecial : Json -> Text
 json.render.compactSpecial = cases
   JNull       -> "null"
   JBoolean b  -> if b then "true" else "false"
-  JNumber f   -> number f
+  JNumber f   -> render.number f
   JString t   -> render.stringSpecial t
   JArray js   ->
     use Text ++

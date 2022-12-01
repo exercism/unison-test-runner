@@ -10,8 +10,8 @@ COPY unison-arm/unison /usr/local/bin/ucm
 
 RUN chmod +x /usr/local/bin/ucm
 ENV XDG_DATA_HOME=/tmp
-RUN echo "pull unison.public.base.latest .base" | /usr/local/bin/ucm -C /opt/test-runner/tmp/testRunner
-RUN echo "pull stew.public.projects.json.releases.v3 lib.json" | /usr/local/bin/ucm --codebase /opt/test-runner/tmp/testRunner
+RUN echo "pull unison.public.base.releases.M4d .base" | /usr/local/bin/ucm -C /opt/test-runner/tmp/testRunner
+RUN echo "pull stew.public.projects.json.releases.v6 lib.json" | /usr/local/bin/ucm --codebase /opt/test-runner/tmp/testRunner
 
 WORKDIR /opt/test-runner
 COPY . .

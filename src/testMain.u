@@ -11,13 +11,13 @@ use testRunner TestFile Test
 }}
 testRunner.main : '{IO,Exception}()
 testRunner.main _ =
-  solutionPrefix = io.getEnv "solution_dir"
+  solutionPrefix = IO.getEnv "solution_dir"
   testAnnotationFilePath = FilePath (solutionPrefix Text.++ "/.meta/testAnnotation.json")
   annotations = !(parseAnnotationFile testAnnotationFilePath)
   testRunner.checkAnnotationFile annotations tests
   json = toV2TestFile tests annotations |> toJson
   jsonString = json |> compactSpecial
-  envFilePath = io.getEnv "results_file"
+  envFilePath = IO.getEnv "results_file"
   filePath = FilePath ( envFilePath )
   writeFile filePath jsonString
 
@@ -59,12 +59,12 @@ testRunner.parseAnnotationFile testFilePath _ =
 testRunner.writeFile : FilePath -> Text ->{IO, Exception} ()
 testRunner.writeFile path content =
   fileHandle : '{IO, Exception} Handle
-  fileHandle _ = openFile path Write
-  bracket fileHandle closeFile (h -> putBytes h (toUtf8 content))
+  fileHandle _ = FilePath.open path Write
+  bracket fileHandle Handle.close (h -> putBytes h (toUtf8 content))
 
 testRunner.readFile : FilePath ->{IO, Exception} Text
 testRunner.readFile path =
-  if not (base.io.fileExists path) then raise (failure "file not found" path) else
+  if not (IO.FilePath.exists path) then raise (failure "file not found" path) else
     read : Handle ->{IO, Exception} Bytes
     read fileHandle =
       go acc =
@@ -74,6 +74,6 @@ testRunner.readFile path =
         if Bytes.size bs < 4096 then acc ++ bs else go (acc ++ bs)
       go Bytes.empty
     fileHandle : '{IO, Exception} Handle
-    fileHandle _ = openFile path Read
-    bracket fileHandle closeFile (file -> read file |> fromUtf8)
+    fileHandle _ = FilePath.open path Read
+    bracket fileHandle Handle.close (file -> read file |> fromUtf8)
 
