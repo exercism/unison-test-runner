@@ -1,6 +1,6 @@
 FROM debian as download
 
-ADD https://github.com/unisonweb/unison/releases/download/release%2FM4e/ucm-linux.tar.gz /tmp/ucm-linux.tar.gz
+ADD https://github.com/unisonweb/unison/releases/download/release%2FM4i/ucm-linux.tar.gz /tmp/ucm-linux.tar.gz
 
 RUN tar -x -z -f /tmp/ucm-linux.tar.gz -C /usr/local/bin ./ucm
 
@@ -14,7 +14,7 @@ COPY --from=download /usr/local/bin/ucm /usr/local/bin/ucm
 # Setting this environment variable directs the UCM config to a writeable directory
 ENV XDG_DATA_HOME=/tmp
 RUN /usr/local/bin/ucm --no-base -C /opt/test-runner/tmp/testRunner
-RUN echo "pull unison.public.exercism_tooling.pinnedLibVersions.base .base" | /usr/local/bin/ucm -c /opt/test-runner/tmp/testRunner
+RUN echo "pull unison.public.exercism_tooling.pinnedLibVersions.baseV1_1_1 .base" | /usr/local/bin/ucm -c /opt/test-runner/tmp/testRunner
 RUN echo "pull unison.public.exercism_tooling.pinnedLibVersions.json lib.json" | /usr/local/bin/ucm -c /opt/test-runner/tmp/testRunner
 
 WORKDIR /opt/test-runner
