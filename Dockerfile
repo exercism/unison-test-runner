@@ -1,10 +1,10 @@
-FROM debian as download
+FROM --platform=linux/amd64 debian as download
 
 ADD https://github.com/unisonweb/unison/releases/download/release%2FM4i/ucm-linux.tar.gz /tmp/ucm-linux.tar.gz
 
 RUN tar -x -z -f /tmp/ucm-linux.tar.gz -C /usr/local/bin ./ucm
 
-FROM debian
+FROM --platform=linux/amd64 debian
 RUN apt-get update && \
     apt-get -y install git less jq && \
     apt-get purge --auto-remove && \
