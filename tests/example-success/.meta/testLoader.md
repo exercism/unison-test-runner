@@ -1,9 +1,9 @@
 # Testing transcript for hello exercise
 
 ```ucm
-.> load /opt/test-runner/tests/example-success/leap.u
-.> add
-.> load /opt/test-runner/tests/example-success/leap.test.u
-.> add
-.> move.term leap.tests tests
+scratch/main> load /opt/test-runner/tests/example-success/leap.u
+scratch/main> add
+scratch/main> load /opt/test-runner/tests/example-success/leap.test.u
+scratch/main> add
+scratch/main> move.term leap.tests tests
 ```

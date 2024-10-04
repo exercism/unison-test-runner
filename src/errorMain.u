@@ -1,43 +1,22 @@
-
-{{{errorStatus.main} is the entry point function for the case where the student submits non-compiling code, resulting in the results.json file not being written with failing test data. This script should be run in the event that the results file failed to be created. It parses the transcript error output and creates a json file.}}
+{{
+  {errorStatus.main} is the entry point function for the case where the student submits non-compiling code, resulting in the results.json file not being written with failing test data. This script should be run in the event that the results file failed to be created. It parses the transcript error output and creates a json file.
+}}
 errorStatus.main : '{IO,Exception}()
 errorStatus.main _ =
-  solutionsDir = IO.getEnv "solution_dir"
-  transcriptFailure = FilePath (solutionsDir ++ "/.meta/testLoader.output.md" )
-  transcriptOutput = readFile transcriptFailure
+  use FilePath /
+  solutionsDir = IO.getEnv "solution_dir" |> FilePath
+  transcriptFailure = solutionsDir / ".meta" / "testLoader.output.md"
+  transcriptOutput = readFileUtf8 transcriptFailure
   messageBody = errorStatus.getTranscriptError transcriptOutput
-  json = toTestFile messageBody |> toJson
-  jsonString = json |> compactSpecial
-  envFilePath = IO.getEnv "results_file"
-  filePath = FilePath ( envFilePath )
-  writeFile filePath jsonString
-
-writeFile : FilePath -> Text ->{IO, Exception} ()
-writeFile path content =
-  fileHandle : '{IO, Exception} Handle
-  fileHandle _ = FilePath.open path Write
-  bracket fileHandle Handle.close (h -> putBytes h (toUtf8 content))
-
-readFile : FilePath ->{IO, Exception} Text
-readFile path =
-  if not (FilePath.exists path) then raise (failure "file not found" path) else
-    read : Handle ->{IO, Exception} Bytes
-    read fileHandle =
-      go acc =
-        use Bytes ++
-        use Nat <
-        bs = getBytes fileHandle 4096
-        if Bytes.size bs < 4096 then acc ++ bs else go (acc ++ bs)
-      go Bytes.empty
-    fileHandle : '{IO, Exception} Handle
-    fileHandle _ = FilePath.open path Read
-    bracket fileHandle Handle.close (file -> read file |> fromUtf8)
+  testFileJson = toTestFile messageBody |> toJson
+  filePath = IO.getEnv "results_file" |> FilePath
+  writeFileUtf8 filePath (Json.toText testFileJson)
 
 {{
   {toTestFile} transforms the failed transcript message into the {type TestFile} data type.
 
   Currently the only version of the spec we support is {Version.Two}
-  }}
+}}
 errorStatus.toTestFile : Text -> TestFile
 errorStatus.toTestFile message =
   TestFile.TestFile (testRunner.Version.Two) (Status.Error) (Some (testRunner.Message.Message message)) None
