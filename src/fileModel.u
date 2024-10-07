@@ -1,46 +1,49 @@
-use Text ++
-
 {{
 {type testRunner.Version} represents the version of the API spec that the JSON output file adheres to
 
-{One} For tracks which test runner cannot provide information on individual tests.
+{Version.One} For tracks which test runner cannot provide information on individual tests.
 
-{Two} For tracks which test runner can output individual test information. Minimal required version for tracks with Concept Exercises.
+{Version.Two} For tracks which test runner can output individual test information. Minimal required version for tracks with Concept Exercises.
 
-{Three}For tracks which test runner can link individual tests to a task. Typically used for concept exercises
+{Version.Three}For tracks which test runner can link individual tests to a task. Typically used for concept exercises
 }}
 unique type testRunner.Version = One | Two | Three
 
+testRunner.Version.toJson : testRunner.Version -> Json
 testRunner.Version.toJson = cases
-  One -> Json.JNumber (1.0)
-  Two -> Json.JNumber (2.0)
-  Three -> Json.JNumber (3.0)
+  Version.One -> Json.nat 1
+  Version.Two -> Json.nat 2
+  Version.Three -> Json.nat 3
 
 {{
   {type testRunner.Status} can represent the overall status of the test suite results and/or the individual status of a test result.
 
-  If any individual tests fail, the overall result must be {Fail}.
+  If any individual tests fail, the overall result must be {Status.Fail}.
 
-  Note that {Error} won't be reachable as it's only generated for non-compiling code. }}
+  Note that {Status.Error} won't be reachable as it's only generated for non-compiling code. }}
 unique type testRunner.Status = Pass | Fail | Error
 
+testRunner.Status.toJson : testRunner.Status -> Json
 testRunner.Status.toJson = cases
-  Pass -> json.Json.JString "pass"
-  Fail -> json.Json.JString "fail"
-  Error -> json.Json.JString "error"
+  Status.Pass -> Json.text "pass"
+  Status.Fail -> Json.text "fail"
+  Status.Error -> Json.text "error"
 
 {{
   {type testRunner.Message} represents the message that a user should receive about their test results individually or overall, if individual test results are not available.
 }}
 unique type testRunner.Message = Message Text
 
+testRunner.Message.toJson : Message -> Json
 testRunner.Message.toJson = cases
-  Message t -> Json.JString t
+  Message t -> Json.text t
 
 {{A human readable test name}}
 unique type testRunner.Name = Name Text
+
+testRunner.Name.toJson : Name -> Json
 testRunner.Name.toJson = cases
-  Name n -> Json.JString n
+  Name n -> Json.text n
 
 {{
   The code which comprises the actual test that the user sees.
@@ -49,8 +52,9 @@ testRunner.Name.toJson = cases
 }}
 unique type testRunner.TestCode = TestCode Text
 
+testRunner.TestCode.toJson : TestCode -> Json
 testRunner.TestCode.toJson = cases
-  TestCode code -> Json.JString code
+  TestCode code -> Json.text code
 
 {{
   {type Output} is used to store and output anything that a user deliberately outputs for a test, for example, debugging information.
@@ -59,8 +63,9 @@ testRunner.TestCode.toJson = cases
 }}
 unique type testRunner.Output = Output Text
 
+testRunner.Output.toJson : Output -> Json
 testRunner.Output.toJson = cases
-  Output output -> Text.take 500 output |> JString
+  Output output -> Text.take 500 output |> Json.text
 
 {{
   {type TaskID} links a test to a specific task (sub-part of a concept exercise) via the task's ID numeric heading
@@ -69,80 +74,62 @@ testRunner.Output.toJson = cases
 }}
 unique type testRunner.TaskID = TaskID Nat
 
+testRunner.TaskID.toJson : TaskID -> Json
 testRunner.TaskID.toJson = cases
-  TaskID n -> Json.JNumber (Nat.toFloat n)
+  TaskID n -> Json.nat n
 
 {{
   Represents a single test
 
   Tests should be present for V2 and V3 of the spec.
 }}
-unique type testRunner.Test = Test testRunner.Name (Optional testRunner.TestCode)  testRunner.Status (Optional testRunner.Message) (Optional testRunner.Output) (Optional testRunner.TaskID)
+unique type testRunner.Test =
+  Test
+    testRunner.Name
+    (Optional testRunner.TestCode)
+    testRunner.Status
+    (Optional testRunner.Message)
+    (Optional testRunner.Output)
+    (Optional testRunner.TaskID)
 
+testRunner.Test.toJson : testRunner.Test -> Json
 testRunner.Test.toJson = cases
-  Test name maybeTestCode status maybeMsg maybeOutput maybeTaskId ->
+  testRunner.Test.Test name maybeTestCode status maybeMsg maybeOutput maybeTaskId ->
       nameStr = ("name", Name.toJson name)
       testCode = Optional.map (c -> ("test_code",TestCode.toJson c)) maybeTestCode
       statusStr = ("status", Status.toJson status)
       msgSt = Optional.map (m -> ("message", Message.toJson m)) maybeMsg
       taskIdStr = Optional.map (t -> ("task_id", TaskID.toJson t)) maybeTaskId
       jsonFields = [(Some nameStr), testCode, (Some statusStr), msgSt, taskIdStr] |> List.somes
-      JObject jsonFields
+      Json.object jsonFields
 
 {{Models overall test file structure}}
 unique type testRunner.TestFile =
-  TestFile testRunner.Version testRunner.Status (Optional testRunner.Message) (Optional [testRunner.Test])
+  TestFile
+    testRunner.Version
+    testRunner.Status
+    (Optional testRunner.Message)
+    (Optional [testRunner.Test])
 
+testRunner.TestFile.toJson : TestFile -> Json
 testRunner.TestFile.toJson = cases
   TestFile version status maybeMessage maybeTests ->
-  versStr = ( "version", Version.toJson version)
+  versStr = ("version", Version.toJson version)
   statStr = ("status", Status.toJson status)
   msgStr = Optional.map (m -> ("message", Message.toJson m)) maybeMessage
   testsStr =
     Optional.map (tests -> List.map Test.toJson tests) maybeTests |>
-    Optional.map (array -> ("tests", JArray array) )
+    Optional.map (array -> ("tests", Json.array array))
   jsonFields = [(Some versStr), (Some statStr), msgStr, testsStr] |> List.somes
-  JObject jsonFields
+  Json.object jsonFields
 
 {{Models json annotation file which we use for test source code and human readable names}}
 unique type testRunner.TestAnnotationFile = TestAnnotationFile [testRunner.TestAnnotation]
 
-testRunner.TestAnnotationFile.fromJson : Json -> {Exception} TestAnnotationFile
-testRunner.TestAnnotationFile.fromJson json =
-  array = Json.asArray json |> Optional.getOrElse []
-  objects : [Optional [(Text,Json)]]
-  objects = List.map Json.asObject array
-  annotations = List.map (maybeObj ->
-      Optional.flatMap tryGetTestAnnotation maybeObj) objects |> List.somes
-  TestAnnotationFile annotations
-
-{{We require that the fields for name and test_code are included for each test}}
-testRunner.tryGetTestAnnotation : [(Text,Json)] -> Optional TestAnnotation
-testRunner.tryGetTestAnnotation fields =
-  getTextField : Text -> [(Text,Json)] -> Optional Text
-  getTextField key fields =
-    keyValue = List.find (cases (k, v) -> k === key ) fields
-    Optional.flatMap (cases (k,v) -> Json.asText v) keyValue
-  getNatField : Text -> [(Text,Json)] -> Optional Nat
-  getNatField key fields =
-    keyValue = List.find (cases (k, v) -> k === key ) fields
-    Optional.flatMap (cases (k,v) -> Json.asNat v) keyValue
-
-  name = '(toAbort (getTextField "name" fields))
-  testCode = '(toAbort (getTextField "test_code" fields))
-  taskNat = getNatField "task_id" fields
-  maybeTaskId = Optional.map (t -> TaskID t) taskNat
-  Abort.toOptional! '(TestAnnotation (Name !name) (TestCode !testCode) maybeTaskId)
-
-testRunner.TestAnnotationFile.fromJsonString : Text -> {Exception} TestAnnotationFile
-testRunner.TestAnnotationFile.fromJsonString rawJson =
-  decodeText TestAnnotationFile.fromJsonRead rawJson
-
-testRunner.TestAnnotationFile.fromJsonRead : '{JsonRead, Throw JsonRead.Error} TestAnnotationFile
-testRunner.TestAnnotationFile.fromJsonRead = 'let
-  annotations : {Throw JsonRead.Error}[TestAnnotation]
-  annotations = JsonRead.list TestAnnotation.fromJsonRead
-  TestAnnotationFile annotations
+testRunner.testAnnotationFileDecoder : '{Decoder} TestAnnotationFile
+testRunner.testAnnotationFileDecoder = do
+  annotations = Decoder.array testAnnotationDecoder
+  TestAnnotationFile !annotations
 
 {{Models the json object annotation}}
 unique type testRunner.TestAnnotation = TestAnnotation testRunner.Name testRunner.TestCode (Optional testRunner.TaskID)
@@ -153,57 +140,14 @@ testRunner.TestAnnotation.toJson = cases
     codeStr = ("test_code", TestCode.toJson code)
     taskIdStr = Optional.map (id -> ("task_id", TaskID.toJson id)) taskId
     annotationsFields = [(Some nameStr), (Some codeStr), taskIdStr] |> List.somes
-    JObject annotationsFields
+    Json.object annotationsFields
 
-testRunner.TestAnnotation.fromJsonRead : '{JsonRead, Throw JsonRead.Error} TestAnnotation
-testRunner.TestAnnotation.fromJsonRead = 'let
-  testCode = expectChildField "test_code" expectText
-  name = expectChildField "name" expectText
-  optTaskId = let
-    maybeTaskNat = '(expectChildField "task_id" expectNat)
-    Throw.toEither maybeTaskNat |> Either.toOptional
-  taskId = Optional.map TaskID optTaskId
-
+testRunner.testAnnotationDecoder : '{Decoder} TestAnnotation
+testRunner.testAnnotationDecoder = do
+  use object at! optionalAt!
+  testCode = at! "test_code" Decoder.text
+  name = at! "name" Decoder.text
+  taskId = match optionalAt! "task_id" Decoder.nat with
+             Some id -> Some (TaskID id)
+             None -> None
   TestAnnotation (Name name) (TestCode testCode) taskId
-
-{{We need these as addendum because the current JSON library doesn't escape a few control characters.
-
-It can be removed when the JSON library on Share has been updated
-}}
-json.render.stringSpecial : Text -> Text
-json.render.stringSpecial =
-  use Text ++
-  escapeChar : Char -> [Char]
-  escapeChar = cases
-    ?\" -> [?\\, ?\"]
-    ?\\ -> [?\\, ?\\]
-    ?\n -> [?\\, ?n]
-    ?\t -> [?\\, ?t]
-    ?\r -> [?\\, ?r]
-    ?\f -> [?\\, ?f]
-    ?\b -> [?\\, ?b]
-    c   ->
-      if isISOControl c then
-        bug
-          ("JSON rendering of control characters is not yet supported for character with decimal value "
-            ++ Nat.toText (Char.toNat c))
-      else [c]
-  surroundQuotes : Text -> Text
-  surroundQuotes t = "\"" ++ t ++ "\""
-  escape = fromCharList << List.flatMap escapeChar << toCharList
-  surroundQuotes << escape
-
-json.render.compactSpecial : Json -> Text
-json.render.compactSpecial = cases
-  JNull       -> "null"
-  JBoolean b  -> if b then "true" else "false"
-  JNumber f   -> render.number f
-  JString t   -> render.stringSpecial t
-  JArray js   ->
-    use Text ++
-    inner = Text.join "," (List.map json.render.compactSpecial js)
-    "[" ++ inner ++ "]"
-  JObject kvs ->
-    use Text ++
-    entry = cases (k, v) -> render.stringSpecial k ++ ":" ++ json.render.compactSpecial v
-    "{" ++ Text.join "," (List.map entry kvs) ++ "}"

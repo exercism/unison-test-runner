@@ -1,5 +1,3 @@
-use Universal
-use base
 use testRunner TestFile Test
 
 {{
@@ -11,15 +9,14 @@ use testRunner TestFile Test
 }}
 testRunner.main : '{IO,Exception}()
 testRunner.main _ =
-  solutionPrefix = IO.getEnv "solution_dir"
-  testAnnotationFilePath = FilePath (solutionPrefix Text.++ "/.meta/testAnnotation.json")
+  use FilePath /
+  solutionPrefix = IO.getEnv "solution_dir" |> FilePath
+  testAnnotationFilePath = solutionPrefix / ".meta" / "testAnnotation.json"
   annotations = !(parseAnnotationFile testAnnotationFilePath)
   testRunner.checkAnnotationFile annotations tests
-  json = toV2TestFile tests annotations |> toJson
-  jsonString = json |> compactSpecial
-  envFilePath = IO.getEnv "results_file"
-  filePath = FilePath ( envFilePath )
-  writeFile filePath jsonString
+  testFileJson = toV2TestFile tests annotations |> TestFile.toJson
+  filePath = IO.getEnv "results_file" |> FilePath
+  writeFileUtf8 filePath (Json.toText testFileJson)
 
 testRunner.Result.toTest: Result -> TestAnnotation -> Test
 testRunner.Result.toTest result annotation =
@@ -50,30 +47,8 @@ testRunner.checkAnnotationFile annotationlist tests =
   if (annotationSize Nat.!= testsSize) then raise (failure failureMsg (annotationlist, tests)) else ()
 
 {{Assumes a json file containing {type TestAnnotation} in a list. The order must match the order of the tests value }}
-testRunner.parseAnnotationFile : FilePath -> '{IO,Exception} [TestAnnotation]
-testRunner.parseAnnotationFile testFilePath _ =
-  json = Json.fromFile testFilePath
-  (TestAnnotationFile annotations) = TestAnnotationFile.fromJson json
+testRunner.parseAnnotationFile : FilePath -> '{IO, Exception} [TestAnnotation]
+testRunner.parseAnnotationFile filePath _ =
+  rawJson = readFileUtf8 filePath
+  (TestAnnotationFile annotations) = Decoder.run testAnnotationFileDecoder rawJson
   annotations
-
-testRunner.writeFile : FilePath -> Text ->{IO, Exception} ()
-testRunner.writeFile path content =
-  fileHandle : '{IO, Exception} Handle
-  fileHandle _ = FilePath.open path Write
-  bracket fileHandle Handle.close (h -> putBytes h (toUtf8 content))
-
-testRunner.readFile : FilePath ->{IO, Exception} Text
-testRunner.readFile path =
-  if not (IO.FilePath.exists path) then raise (failure "file not found" path) else
-    read : Handle ->{IO, Exception} Bytes
-    read fileHandle =
-      go acc =
-        use Bytes ++
-        use Nat <
-        bs = getBytes fileHandle 4096
-        if Bytes.size bs < 4096 then acc ++ bs else go (acc ++ bs)
-      go Bytes.empty
-    fileHandle : '{IO, Exception} Handle
-    fileHandle _ = FilePath.open path Read
-    bracket fileHandle Handle.close (file -> read file |> fromUtf8)
-
