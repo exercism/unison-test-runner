@@ -1,6 +1,6 @@
 FROM --platform=linux/amd64 debian as download
 
-ADD https://github.com/unisonweb/unison/releases/download/release%2F0.5.41/ucm-linux-x64.tar.gz /tmp/ucm-linux-x64.tar.gz
+ADD https://github.com/unisonweb/unison/releases/download/release%2F0.5.49/ucm-linux-x64.tar.gz /tmp/ucm-linux-x64.tar.gz
 
 RUN mkdir /opt/unisonlanguage && tar -x -z -f /tmp/ucm-linux-x64.tar.gz -C /opt/unisonlanguage
 
@@ -14,8 +14,8 @@ COPY --from=download /opt/unisonlanguage/unison/unison /usr/local/bin/ucm
 # Setting this environment variable directs the UCM config to a writeable directory
 ENV XDG_DATA_HOME=/tmp
 RUN /usr/local/bin/ucm -C /opt/test-runner/tmp/testRunner
-RUN echo "lib.install @unison/base/releases/4.2.0" | /usr/local/bin/ucm -c /opt/test-runner/tmp/testRunner
-RUN echo "lib.install @unison/json/releases/1.3.4" | /usr/local/bin/ucm -c /opt/test-runner/tmp/testRunner
+RUN echo "lib.install @unison/base/releases/6.3.1" | /usr/local/bin/ucm -c /opt/test-runner/tmp/testRunner
+RUN echo "lib.install @unison/json/releases/1.3.5" | /usr/local/bin/ucm -c /opt/test-runner/tmp/testRunner
 
 WORKDIR /opt/test-runner
 COPY . .
