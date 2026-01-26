@@ -1,6 +1,6 @@
 FROM --platform=linux/amd64 debian as download
 
-ADD https://github.com/unisonweb/unison/releases/download/release%2F0.5.49/ucm-linux-x64.tar.gz /tmp/ucm-linux-x64.tar.gz
+ADD https://github.com/unisonweb/unison/releases/download/release%2F1.0.2/ucm-linux-x64.tar.gz /tmp/ucm-linux-x64.tar.gz
 
 RUN mkdir /opt/unisonlanguage && tar -x -z -f /tmp/ucm-linux-x64.tar.gz -C /opt/unisonlanguage
 
